@@ -105,7 +105,7 @@ function loadData(q = '') {
             document.getElementById('count').textContent = `${data.length} registro(s)`;
             if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Nenhum fornecedor encontrado.</td></tr>'; return; }
             tbody.innerHTML = data.map(r => `
-                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">${esc(r.nome)}</td>
                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${esc(r.contato||'—')}</td>
                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${esc(r.telefone||'—')}</td>

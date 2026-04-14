@@ -150,7 +150,7 @@ function loadData(q = '') {
             document.getElementById('count').textContent = `${data.length} produto(s)`;
             if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Nenhum produto encontrado.</td></tr>'; return; }
             tbody.innerHTML = data.map(r => `
-                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">${esc(r.nome)}</td>
                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${esc(r.categoria_nome||'—')}</td>
                     <td class="px-4 py-3 text-center"><span class="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs">${esc(r.unidade_sigla)}</span></td>

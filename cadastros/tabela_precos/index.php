@@ -106,7 +106,7 @@ function loadData(q = '') {
         tbody.innerHTML = data.map(r => {
             const mult = parseFloat(r.multiplicador);
             const perc = (mult * 100).toFixed(0) + '%';
-            return `<tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+            return `<tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">${esc(r.nome)}</td>
                 <td class="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">${parseFloat(r.multiplicador).toFixed(2)}</td>
                 <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">${perc}</td>

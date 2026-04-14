@@ -104,7 +104,7 @@ function loadData(q = '') {
                 return;
             }
             tbody.innerHTML = data.map(r => `
-                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                     <td class="px-4 py-3 text-gray-500 dark:text-gray-400">${r.id}</td>
                     <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">${esc(r.nome)}</td>
                     <td class="px-4 py-3"><span class="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs">${esc(r.sigla)}</span></td>

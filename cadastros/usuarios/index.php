@@ -123,7 +123,7 @@ function loadData(q = '') {
             document.getElementById('count').textContent = `${data.length} registro(s)`;
             if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Nenhum usuário encontrado.</td></tr>'; return; }
             tbody.innerHTML = data.map(r => `
-                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
                         ${esc(r.nome)}
                         ${r.id==MY_ID?'<span class="ml-2 text-xs bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded">Você</span>':''}
