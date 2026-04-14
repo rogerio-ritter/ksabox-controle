@@ -1,51 +1,101 @@
 <?php
-function jsonResponse(bool $success, string $message = '', mixed $data = null, int $code = 200): never {
-    http_response_code($code);
-    header('Content-Type: application/json');
-    echo json_encode(['success' => $success, 'message' => $message, 'data' => $data]);
+/**
+ * functions.php — Funções utilitárias globais
+ */
+
+/**
+ * Escapa HTML para prevenir XSS.
+ */
+function h(?string $str): string {
+    return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Formata valor monetário em Real Brasileiro.
+ * Ex: 1234.56 => "R$ 1.234,56"
+ */
+function moneyBr(float|string|null $value): string {
+    return 'R$ ' . number_format((float)($value ?? 0), 2, ',', '.');
+}
+
+/**
+ * Formata data do formato MySQL (Y-m-d) para BR (d/m/Y).
+ */
+function dateBr(?string $date): string {
+    if (!$date) return '';
+    return date('d/m/Y', strtotime($date));
+}
+
+/**
+ * Formata data e hora do MySQL para BR.
+ */
+function dateTimeBr(?string $datetime): string {
+    if (!$datetime) return '';
+    return date('d/m/Y H:i', strtotime($datetime));
+}
+
+/**
+ * Envia resposta JSON padronizada e encerra a execução.
+ */
+function jsonResponse(array $data, int $statusCode = 200): never {
+    http_response_code($statusCode);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
+/**
+ * Lê o body da requisição.
+ * Suporta application/json e application/x-www-form-urlencoded / multipart.
+ */
 function getInput(): array {
-    $raw = file_get_contents('php://input');
-    if (!empty($raw)) {
-        $json = json_decode($raw, true);
-        if (is_array($json)) return $json;
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    if (str_contains($contentType, 'application/json')) {
+        $raw = file_get_contents('php://input');
+        return json_decode($raw, true) ?? [];
     }
     return $_POST;
 }
 
-function h(mixed $v): string {
-    return htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+/**
+ * Verifica se o tema do usuário logado é escuro.
+ */
+function isDark(): bool {
+    return ($_SESSION['user']['tema'] ?? 'claro') === 'escuro';
 }
 
-function moneyBr(mixed $v): string {
-    return 'R$ ' . number_format((float)$v, 2, ',', '.');
+/**
+ * Retorna a classe CSS de badge para status de orçamento.
+ */
+function badgeOrcamento(string $status): string {
+    return match ($status) {
+        'Rascunho'  => 'bg-gray-100 text-gray-700',
+        'Enviado'   => 'bg-blue-100 text-blue-700',
+        'Aprovado'  => 'bg-green-100 text-green-700',
+        'Rejeitado' => 'bg-red-100 text-red-700',
+        'Cancelado' => 'bg-yellow-100 text-yellow-700',
+        default     => 'bg-gray-100 text-gray-600',
+    };
 }
 
-function dateBr(?string $d): string {
-    if (!$d) return '-';
-    $dt = DateTime::createFromFormat('Y-m-d', $d);
-    return $dt ? $dt->format('d/m/Y') : $d;
+/**
+ * Converte valor em formato BR (1.234,56) para float.
+ */
+function parseMoney(string $value): float {
+    $value = str_replace(['R$', ' ', '.'], '', $value);
+    $value = str_replace(',', '.', $value);
+    return (float)$value;
 }
 
-function activeMenu(string $segment): string {
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
-    if ($segment === 'dashboard') {
-        $isActive = str_ends_with($uri, '/dashboard.php');
-    } else {
-        $isActive = str_contains($uri, "/$segment/");
-    }
-    return $isActive
-        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
-        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700';
-}
-
-function getEmpresa(): array {
-    static $empresa = null;
-    if ($empresa === null) {
-        $stmt = db()->query('SELECT * FROM empresa LIMIT 1');
-        $empresa = $stmt->fetch() ?: ['nome' => 'Minha Empresa', 'cnpj' => '', 'telefone' => '', 'email' => '', 'endereco' => ''];
-    }
-    return $empresa;
+/**
+ * Gera número sequencial de orçamento: ORC-YYYYMMDD-NNN
+ */
+function gerarNumeroOrcamento(): string {
+    $hoje = date('Ymd');
+    $stmt = db()->prepare(
+        "SELECT COUNT(*) FROM orcamentos WHERE numero LIKE ?"
+    );
+    $stmt->execute(["ORC-$hoje-%"]);
+    $count = (int)$stmt->fetchColumn();
+    return sprintf('ORC-%s-%03d', $hoje, $count + 1);
 }

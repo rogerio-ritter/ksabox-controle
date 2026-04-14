@@ -1,74 +1,82 @@
-<aside id="sidebar" class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0 no-print fixed lg:relative inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+<?php
+/**
+ * sidebar.php — Menu lateral de navegação
+ */
+
+$currentUrl = $_SERVER['REQUEST_URI'] ?? '';
+
+function sidebarLink(string $href, string $icon, string $label, string $currentUrl): string {
+    $active = str_contains($currentUrl, parse_url($href, PHP_URL_PATH))
+        ? 'bg-blue-700 text-white'
+        : 'text-gray-300 hover:bg-gray-700 hover:text-white';
+    return sprintf(
+        '<a href="%s" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium %s transition-colors">
+            <i class="%s w-5 text-center"></i>
+            <span class="sidebar-label">%s</span>
+        </a>',
+        $href, $active, $icon, $label
+    );
+}
+?>
+
+<aside id="sidebar" class="w-64 bg-gray-900 flex flex-col flex-shrink-0 overflow-y-auto
+    fixed inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-200
+    lg:relative lg:translate-x-0">
+
     <!-- Logo -->
-    <div class="h-16 flex items-center gap-3 px-5 border-b border-gray-200 dark:border-gray-700">
-        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/>
-            </svg>
-        </div>
-        <span class="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm"><?= h($empresa['nome']) ?></span>
+    <div class="h-14 flex items-center justify-center px-4 bg-gray-950 flex-shrink-0">
+      <!--  <span class="text-white font-bold text-xl tracking-wide">
+            <i class="fas fa-box-open text-blue-400 mr-2"></i>Ksabox
+        </span> -->
+        <a href="<?= APP_URL ?>./dashboard.php" >
+            <img width="310" height='81'  src="<?= APP_URL; ?>/assets/img/logo.png" /> 
+        </a>
     </div>
 
-    <!-- Nav -->
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <a href="<?= APP_URL ?>/dashboard.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('dashboard') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11l2 2m-2-2v10a1 1 0 0 0-1 1h-3m-6 0a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1m6 0h-6"/></svg>
-            Dashboard
-        </a>
+    <nav class="flex-1 px-3 py-4 space-y-1">
 
-        <div class="pt-3 pb-1">
-            <p class="px-3 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Cadastros</p>
-        </div>
+        <!-- Dashboard -->
+        <?= sidebarLink(APP_URL . '/dashboard.php', 'fas fa-tachometer-alt', 'Dashboard', $currentUrl) ?>
 
-        <a href="<?= APP_URL ?>/clientes/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('clientes') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>
-            Clientes
-        </a>
+        <!-- CADASTROS -->
+        <p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cadastros</p>
+        <?= sidebarLink(APP_URL . '/cadastros/categorias/index.php',   'fas fa-tags',          'Categorias',      $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/cadastros/unidades/index.php',     'fas fa-ruler',         'Unidades',        $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/cadastros/fornecedores/index.php', 'fas fa-truck',         'Fornecedores',    $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/cadastros/clientes/index.php',     'fas fa-users',         'Clientes',        $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/cadastros/tabela_precos/index.php','fas fa-percent',       'Tabelas de Preço',$currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/cadastros/produtos/index.php',     'fas fa-boxes',         'Produtos',        $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/cadastros/usuarios/index.php',     'fas fa-user-shield',   'Usuários',        $currentUrl) ?>
 
-        <a href="<?= APP_URL ?>/categorias/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('categorias') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 0 1 0 2.828l-7 7a2 2 0 0 1-2.828 0l-7-7A2 2 0 0 1 3 12V7a4 4 0 0 1 4-4z"/></svg>
-            Categorias
-        </a>
+        <!-- COMERCIAL -->
+        <p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Comercial</p>
+        <?= sidebarLink(APP_URL . '/comercial/custo/index.php',           'fas fa-dollar-sign',  'Custo de Produto', $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/comercial/formacao_preco/index.php',  'fas fa-chart-line',   'Formação de Preço',$currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/comercial/orcamentos/index.php',      'fas fa-file-invoice', 'Orçamentos',       $currentUrl) ?>
 
-        <a href="<?= APP_URL ?>/produtos/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('produtos') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-            Produtos
-        </a>
+        <!-- ESTOQUE -->
+        <p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estoque</p>
+        <?= sidebarLink(APP_URL . '/estoque/entrada/index.php',  'fas fa-arrow-down', 'Entrada',       $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/estoque/saida/index.php',    'fas fa-arrow-up',   'Saída',         $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/estoque/relatorio/index.php','fas fa-warehouse',  'Saldo Estoque', $currentUrl) ?>
 
-        <a href="<?= APP_URL ?>/tabela_preco/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('tabela_preco') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-            Tabelas de Preços
-        </a>
+        <!-- RELATÓRIOS -->
+        <p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Relatórios</p>
+        <?= sidebarLink(APP_URL . '/relatorios/estoque/index.php',       'fas fa-cubes',      'Estoque',        $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/relatorios/movimentacao/index.php',  'fas fa-exchange-alt','Movimentação',  $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/relatorios/tabela_precos/index.php', 'fas fa-list-alt',   'Tabela de Preços',$currentUrl) ?>
 
-        <div class="pt-3 pb-1">
-            <p class="px-3 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Comercial</p>
-        </div>
+        <!-- CONFIGURAÇÕES -->
+        <p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Configurações</p>
+        <?= sidebarLink(APP_URL . '/configuracoes/empresa/index.php', 'fas fa-building', 'Empresa', $currentUrl) ?>
+        <?= sidebarLink(APP_URL . '/configuracoes/perfil/index.php',  'fas fa-user-cog', 'Meu Perfil', $currentUrl) ?>
 
-        <a href="<?= APP_URL ?>/orcamentos/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('orcamentos') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/></svg>
-            Orçamentos
-        </a>
-
-        <div class="pt-3 pb-1">
-            <p class="px-3 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Configurações</p>
-        </div>
-
-        <a href="<?= APP_URL ?>/empresa/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('empresa') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4"/></svg>
-            Empresa
-        </a>
-
-        <a href="<?= APP_URL ?>/perfil/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors <?= activeMenu('perfil') ?>">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/></svg>
-            Meu Perfil
-        </a>
     </nav>
 
-    <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-        <a href="<?= APP_URL ?>/logout.php" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
-            Sair
-        </a>
+    <div class="px-3 py-3 border-t border-gray-800 text-xs text-gray-600 text-center">
+        v1.0 &copy; <?= date('Y') ?> Ksabox
     </div>
 </aside>
-<div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
+<!-- Overlay para fechar sidebar no mobile -->
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>

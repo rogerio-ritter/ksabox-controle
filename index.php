@@ -1,5 +1,9 @@
 <?php
-require_once __DIR__ . '/includes/config.php';
+/**
+ * index.php — Roteador principal
+ * Redireciona para dashboard (se logado) ou login
+ */
+
 require_once __DIR__ . '/includes/auth.php';
 
 if (isLoggedIn()) {
