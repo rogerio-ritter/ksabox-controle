@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS `custo_produtos` (
     valor_seguro DECIMAL(15,2) GENERATED ALWAYS AS (valor_prod_brl * perc_seguro / 100) STORED,
 
     perc_ii DECIMAL(5,2) NOT NULL,
-    valor_ii DECIMAL(15,2) GENERATED ALWAYS AS ((valor_prod_brl + frete_brl) / (1 - perc_ii / 100) * perc_ii / 100) STORED,
+    valor_ii DECIMAL(15,2) GENERATED ALWAYS AS ((valor_prod_brl + frete_brl + valor_seguro) / (1 - perc_ii / 100) * perc_ii / 100) STORED,
 
     perc_pis DECIMAL(5,2) NOT NULL,
     valor_pis DECIMAL(15,2) GENERATED ALWAYS AS ((valor_prod_brl + frete_brl + valor_seguro) / (1 - perc_pis / 100) * perc_pis / 100) STORED,

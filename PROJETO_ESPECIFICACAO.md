@@ -543,7 +543,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 1. valor_prod_brl = valor_prod_usd × quantidade × cotacao_dolar
 2. frete_brl = frete_usd × cotacao_dolar
 3. valor_seguro = valor_prod_brl × (perc_seguro / 100)
-4. valor_ii = (valor_prod_brl + frete_brl) / (1 - perc_ii/100) × (perc_ii / 100)
+4. valor_ii = (valor_prod_brl + frete_brl + valor_seguro) / (1 - perc_ii/100) × (perc_ii / 100)
 5. valor_pis = (valor_prod_brl + frete_brl + valor_seguro) / (1 - perc_pis/100) × (perc_pis / 100)
 6. valor_cofins = (valor_prod_brl + frete_brl + valor_seguro) / (1 - perc_cofins/100) × (perc_cofins / 100)
 7. valor_ipi = (valor_prod_brl + frete_brl + valor_seguro) / (1 - perc_ipi/100) × (perc_ipi / 100)
