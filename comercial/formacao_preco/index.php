@@ -307,7 +307,7 @@ function calcular() {
     const vDespFix    = venda * pDespFix / 100;
     const vComis      = venda * pComis / 100;
     const vPos        = venda * pPos / 100;
-    const vICMSVenda  = (venda * pICMSVenda / 100) - icmsCusto;
+    const vICMSVenda  = (vMat * pICMSVenda / 100) - icmsCusto;
     const vImpMat     = vMat * pImpMat / 100;
     const vImpSrv     = vServ * pImpSrv / 100;
 

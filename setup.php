@@ -235,7 +235,7 @@ CREATE TABLE IF NOT EXISTS `formacao_precos` (
 
     perc_icms_venda DECIMAL(5,2) NOT NULL DEFAULT 19.50,
     icms_custo_unitario DECIMAL(15,2) NOT NULL COMMENT 'Vem de custo_produtos (valor_icms / quantidade)',
-    valor_icms_venda DECIMAL(15,2) GENERATED ALWAYS AS ((valor_venda * perc_icms_venda / 100) - icms_custo_unitario) STORED,
+    valor_icms_venda DECIMAL(15,2) GENERATED ALWAYS AS ((valor_material * perc_icms_venda / 100) - icms_custo_unitario) STORED,
 
     valor_montagem DECIMAL(15,2) NOT NULL DEFAULT 0.00,
 

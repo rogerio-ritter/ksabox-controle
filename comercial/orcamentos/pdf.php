@@ -167,7 +167,8 @@ tbody td.center { text-align:center; }
     <!-- Cabeçalho -->
     <div class="header">
         <div>
-            <div class="empresa-nome"><?= h($empresa['nome'] ?? 'Ksabox') ?></div>
+            <div> <img width="310" height='81'  src="<?= APP_URL; ?>/assets/img/logo-orc.svg" /></div>
+           <!-- <div class="empresa-nome"><?= h($empresa['nome'] ?? 'Ksabox') ?></div> -->
             <div class="empresa-info">
                 <?php if (!empty($empresa['cnpj'])): ?>CNPJ: <?= h($empresa['cnpj']) ?><br><?php endif; ?>
                 <?php if (!empty($empresa['telefone'])): ?>Tel.: <?= h($empresa['telefone']) ?><?php endif; ?>
@@ -200,7 +201,7 @@ tbody td.center { text-align:center; }
             <div class="sec-label">Detalhes</div>
             <p><strong>Data de emissão:</strong> <?= dateBr($orc['data_criacao']) ?></p>
             <p><strong>Válido até:</strong> <?= dateBr($orc['validade']) ?: '—' ?></p>
-            <p><strong>Tabela de Preço:</strong> <?= h($orc['tabela_nome']) ?></p>
+           <!-- <p><strong>Tabela de Preço:</strong> <?= h($orc['tabela_nome']) ?></p> -->
             <?php if ($orc['prazo_entrega']): ?>
             <p><strong>Prazo de entrega:</strong> <?= h($orc['prazo_entrega']) ?></p>
             <?php endif; ?>
@@ -217,7 +218,7 @@ tbody td.center { text-align:center; }
                 <th class="right" style="width:10%">Qtd</th>
                 <th class="right" style="width:14%">Vlr Unit.</th>
                 <th class="right" style="width:14%">Vlr Total</th>
-                <th class="right" style="width:14%">% Margem</th>
+              <!--  <th class="right" style="width:14%">% Margem</th> -->
             </tr>
         </thead>
         <tbody>
@@ -231,9 +232,9 @@ tbody td.center { text-align:center; }
                 <td class="right"><?= number_format((float)$item['quantidade'], 2, ',', '.') ?></td>
                 <td class="right"><?= moneyBr($item['valor_unitario']) ?></td>
                 <td class="right"><strong><?= moneyBr($item['valor_total']) ?></strong></td>
-                <td class="right" style="color:<?= $mCor ?>; font-weight:600;">
+               <!-- <td class="right" style="color:<?= $mCor ?>; font-weight:600;">
                     <?= number_format($pm, 1, ',', '.') ?>%
-                </td>
+                </td> -->
             </tr>
         <?php endforeach; ?>
         </tbody>
