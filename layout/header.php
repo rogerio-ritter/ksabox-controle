@@ -77,6 +77,11 @@ $user = $_SESSION['user'] ?? [];
                 <button id="btn-user-menu" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400">
                     <i class="fas fa-user-circle text-xl"></i>
                     <span class="hidden sm:inline"><?= h($user['nome'] ?? 'Usuário') ?></span>
+                    <?php if (($user['tipo'] ?? '') === 'administrador'): ?>
+                    <span class="hidden sm:inline text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 px-1.5 py-0.5 rounded font-medium">Admin</span>
+                    <?php else: ?>
+                    <span class="hidden sm:inline text-xs bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300 px-1.5 py-0.5 rounded font-medium">Colaborador</span>
+                    <?php endif; ?>
                     <i class="fas fa-chevron-down text-xs"></i>
                 </button>
                 <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 text-sm z-50">
@@ -94,4 +99,10 @@ $user = $_SESSION['user'] ?? [];
 
     <!-- Conteúdo da página -->
     <main class="flex-1 p-4 lg:p-6 overflow-auto">
+<?php if (!empty($_SESSION['flash_error'])): ?>
+<div class="mb-4 flex items-center gap-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm">
+    <i class="fas fa-lock"></i>
+    <?= h($_SESSION['flash_error']) ?>
+</div>
+<?php unset($_SESSION['flash_error']); endif; ?>
 <!-- (fechado no footer.php) -->

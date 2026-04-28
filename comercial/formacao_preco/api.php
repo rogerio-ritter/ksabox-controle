@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
-requireLogin();
+requireAdmin();
 
 $method = $_SERVER['REQUEST_METHOD'];
 $input  = getInput();

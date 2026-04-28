@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
-requireLogin();
+requireAdmin();
 $pageTitle = 'Usuários';
 $myId = (int)($_SESSION['user']['id'] ?? 0);
 require_once __DIR__ . '/../../layout/header.php';
@@ -34,6 +34,7 @@ require_once __DIR__ . '/../../layout/header.php';
                 <tr class="text-left border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Nome</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">E-mail</th>
+                    <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 w-32 text-center">Tipo</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 w-24 text-center">Tema</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 w-24 text-center">Status</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 w-24 text-right">Ações</th>
@@ -76,6 +77,13 @@ require_once __DIR__ . '/../../layout/header.php';
                         <i id="icon-senha" class="fas fa-eye"></i>
                     </button>
                 </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Usuário <span class="text-red-500">*</span></label>
+                <select id="f-tipo" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="administrador">Administrador (acesso total)</option>
+                    <option value="colaborador">Colaborador (sem custo, formação de preço e usuários)</option>
+                </select>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -121,7 +129,7 @@ function loadData(q = '') {
             const json = await res.json();
             const data = json.data || [];
             document.getElementById('count').textContent = `${data.length} registro(s)`;
-            if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Nenhum usuário encontrado.</td></tr>'; return; }
+            if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Nenhum usuário encontrado.</td></tr>'; return; }
             tbody.innerHTML = data.map(r => `
                 <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
@@ -129,6 +137,11 @@ function loadData(q = '') {
                         ${r.id==MY_ID?'<span class="ml-2 text-xs bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded">Você</span>':''}
                     </td>
                     <td class="px-4 py-3 text-gray-600 dark:text-gray-400">${esc(r.email)}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium ${r.tipo==='administrador'?'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300':'bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300'}">
+                            <i class="fas ${r.tipo==='administrador'?'fa-user-shield':'fa-user'} mr-1"></i>${r.tipo==='administrador'?'Administrador':'Colaborador'}
+                        </span>
+                    </td>
                     <td class="px-4 py-3 text-center">
                         <span class="text-xs ${r.tema==='escuro'?'text-indigo-600 dark:text-indigo-400':'text-amber-600 dark:text-amber-400'}">
                             <i class="fas ${r.tema==='escuro'?'fa-moon':'fa-sun'} mr-1"></i>${r.tema}
@@ -152,6 +165,7 @@ function openModal(id = 0) {
     document.getElementById('f-nome').value  = '';
     document.getElementById('f-email').value = '';
     document.getElementById('f-senha').value = '';
+    document.getElementById('f-tipo').value  = 'administrador';
     document.getElementById('f-tema').value  = 'claro';
     document.getElementById('f-ativo').checked = true;
     document.getElementById('senha-hint').textContent = id ? '(deixe em branco para manter a senha atual)' : '(obrigatória para novo usuário)';
@@ -159,6 +173,7 @@ function openModal(id = 0) {
         fetch(`api.php?id=${id}`).then(r=>r.json()).then(({data}) => {
             document.getElementById('f-nome').value  = data.nome;
             document.getElementById('f-email').value = data.email;
+            document.getElementById('f-tipo').value  = data.tipo || 'administrador';
             document.getElementById('f-tema').value  = data.tema;
             document.getElementById('f-ativo').checked = data.ativo==1;
             document.getElementById('modal').classList.remove('hidden');
@@ -176,7 +191,7 @@ async function saveForm() {
     if (!nome)  { showToast('Nome é obrigatório.','error'); return; }
     if (!email) { showToast('E-mail é obrigatório.','error'); return; }
     if (!id && !senha) { showToast('Senha é obrigatória.','error'); return; }
-    const payload = { id, nome, email, tema: document.getElementById('f-tema').value, ativo: document.getElementById('f-ativo').checked?1:0 };
+    const payload = { id, nome, email, tipo: document.getElementById('f-tipo').value, tema: document.getElementById('f-tema').value, ativo: document.getElementById('f-ativo').checked?1:0 };
     if (senha) payload.senha = senha;
     const btn = document.getElementById('btn-save');
     setLoading(btn, true);

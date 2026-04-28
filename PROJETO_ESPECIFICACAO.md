@@ -424,6 +424,7 @@ CREATE TABLE usuarios (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL COMMENT 'password_hash()',
+    tipo ENUM('administrador', 'colaborador') NOT NULL DEFAULT 'administrador',
     tema ENUM('claro', 'escuro') DEFAULT 'claro',
     ativo TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -431,9 +432,20 @@ CREATE TABLE usuarios (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Usuário padrão (senha: admin123)
-INSERT INTO usuarios (nome, email, senha) VALUES 
-('Administrador', 'admin@admin.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+INSERT INTO usuarios (nome, email, senha, tipo) VALUES 
+('Administrador', 'admin@admin.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'administrador');
 ```
+
+#### Tipos de Usuário
+
+| Tipo | Acesso |
+|------|--------|
+| `administrador` | Acesso total ao sistema |
+| `colaborador` | Sem acesso a: Custo de Produto, Formação de Preço, Cadastro de Usuários |
+
+- O sidebar oculta automaticamente os itens restritos para Colaboradores.
+- As páginas e APIs restritas usam `requireAdmin()` — retorna 403 em APIs e redireciona para o dashboard em páginas.
+- O tipo do usuário é armazenado na sessão (`$_SESSION['user']['tipo']`) e verificado via `isAdmin()` / `requireAdmin()` em `includes/auth.php`.
 
 ### Tabela: `empresa`
 ```sql
@@ -491,6 +503,12 @@ uploads/
 // Toda página protegida inicia com:
 require_once __DIR__ . '/../includes/auth.php';
 requireLogin();
+
+// Páginas exclusivas de Administrador usam:
+requireAdmin(); // redireciona Colaboradores com flash_error
+
+// Verificação pontual de tipo:
+if (isAdmin()) { /* só Administrador chega aqui */ }
 ```
 
 ### Acesso ao Banco

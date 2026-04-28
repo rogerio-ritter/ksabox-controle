@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/functions.php';
-requireLogin();
+requireAdmin();
 $pageTitle = 'Custo de Produto';
 require_once __DIR__ . '/../../layout/header.php';
 ?>

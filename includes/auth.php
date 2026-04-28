@@ -26,7 +26,7 @@ function requireLogin(): void {
  * Retorna array com dados do usuário ou false em caso de falha.
  */
 function login(string $email, string $senha): array|false {
-    $stmt = db()->prepare("SELECT id, nome, email, senha, tema FROM usuarios WHERE email = ? AND ativo = 1 LIMIT 1");
+    $stmt = db()->prepare("SELECT id, nome, email, senha, tema, tipo FROM usuarios WHERE email = ? AND ativo = 1 LIMIT 1");
     $stmt->execute([trim($email)]);
     $user = $stmt->fetch();
 
@@ -67,4 +67,32 @@ function currentUser(): array {
  */
 function isLoggedIn(): bool {
     return !empty($_SESSION['user']['id']);
+}
+
+/**
+ * Verifica se o usuário logado é Administrador.
+ */
+function isAdmin(): bool {
+    return ($_SESSION['user']['tipo'] ?? '') === 'administrador';
+}
+
+/**
+ * Exige que o usuário seja Administrador.
+ * Em APIs JSON retorna 403; em páginas redireciona para o dashboard.
+ */
+function requireAdmin(): void {
+    requireLogin();
+    if (!isAdmin()) {
+        $isApi = str_ends_with($_SERVER['SCRIPT_FILENAME'] ?? '', 'api.php')
+            || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+        if ($isApi) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Acesso restrito a Administradores.']);
+            exit;
+        }
+        $_SESSION['flash_error'] = 'Você não tem permissão para acessar esta página.';
+        header('Location: ' . APP_URL . '/dashboard.php');
+        exit;
+    }
 }

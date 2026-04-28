@@ -46,12 +46,16 @@ function sidebarLink(string $href, string $icon, string $label, string $currentU
         <?= sidebarLink(APP_URL . '/cadastros/clientes/index.php',     'fas fa-users',         'Clientes',        $currentUrl) ?>
         <?= sidebarLink(APP_URL . '/cadastros/tabela_precos/index.php','fas fa-percent',       'Tabelas de Preço',$currentUrl) ?>
         <?= sidebarLink(APP_URL . '/cadastros/produtos/index.php',     'fas fa-boxes',         'Produtos',        $currentUrl) ?>
+        <?php if (isAdmin()): ?>
         <?= sidebarLink(APP_URL . '/cadastros/usuarios/index.php',     'fas fa-user-shield',   'Usuários',        $currentUrl) ?>
+        <?php endif; ?>
 
         <!-- COMERCIAL -->
         <p class="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Comercial</p>
+        <?php if (isAdmin()): ?>
         <?= sidebarLink(APP_URL . '/comercial/custo/index.php',           'fas fa-dollar-sign',  'Custo de Produto', $currentUrl) ?>
         <?= sidebarLink(APP_URL . '/comercial/formacao_preco/index.php',  'fas fa-chart-line',   'Formação de Preço',$currentUrl) ?>
+        <?php endif; ?>
         <?= sidebarLink(APP_URL . '/comercial/orcamentos/index.php',      'fas fa-file-invoice', 'Orçamentos',       $currentUrl) ?>
 
         <!-- ESTOQUE -->
