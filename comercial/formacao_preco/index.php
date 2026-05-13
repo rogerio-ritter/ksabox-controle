@@ -125,7 +125,7 @@ require_once __DIR__ . '/../../layout/header.php';
                                 <p class="text-xs text-gray-400 mt-1">% Serviço = <span id="info-perc_servico">30,00</span>%</p>
                             </div>
                             <div>
-                                <label class="lbl">Valor de Montagem (R$)</label>
+                                <label class="lbl">Valor Avulso (R$)</label>
                                 <input id="f-valor_montagem" type="number" min="0" step="0.01" placeholder="0.00"
                                     class="inp" oninput="recalcular()">
                             </div>
@@ -220,7 +220,7 @@ require_once __DIR__ . '/../../layout/header.php';
                                 <div class="resumo-row"><span class="text-gray-500 dark:text-gray-400">ICMS Venda</span><span id="r-icms_venda">R$ 0,00</span></div>
                                 <div class="resumo-row"><span class="text-gray-500 dark:text-gray-400">Imp. Int. Material</span><span id="r-imp_material">R$ 0,00</span></div>
                                 <div class="resumo-row"><span class="text-gray-500 dark:text-gray-400">Imp. Int. Serviço</span><span id="r-imp_servico">R$ 0,00</span></div>
-                                <div class="resumo-row"><span class="text-gray-500 dark:text-gray-400">Montagem</span><span id="r-montagem">R$ 0,00</span></div>
+                                <div class="resumo-row"><span class="text-gray-500 dark:text-gray-400">Avulso</span><span id="r-montagem">R$ 0,00</span></div>
                             </div>
                         </div>
 

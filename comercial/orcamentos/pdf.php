@@ -40,10 +40,6 @@ $itens = $stmt2->fetchAll();
 /* ── Empresa ── */
 $empresa = db()->query("SELECT * FROM empresa LIMIT 1")->fetch() ?: [];
 
-/* ── Desconto calculado ── */
-$desconto = $orc['tipo_desconto'] === 'valor'
-    ? (float)$orc['desconto_valor']
-    : ((float)$orc['subtotal'] * (float)$orc['desconto_percentual'] / 100);
 
 $statusCor = match($orc['status']) {
     'Aprovado'  => '#16a34a',
@@ -78,7 +74,7 @@ body {
 }
 
 /* ── Cabeçalho ── */
-.header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1d4ed8; padding-bottom:12px; margin-bottom:16px; }
+.header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #777a82; padding-bottom:12px; margin-bottom:16px; }
 .empresa-nome { font-size:16pt; font-weight:700; color:#1d4ed8; }
 .empresa-info { font-size:8.5pt; color:#6b7280; line-height:1.5; margin-top:3px; }
 .orc-titulo { text-align:right; }
@@ -97,7 +93,7 @@ body {
 
 /* ── Tabela de Itens ── */
 table { width:100%; border-collapse:collapse; margin-bottom:14px; font-size:9.5pt; }
-thead th { background:#1d4ed8; color:#fff; padding:7px 8px; text-align:left; font-weight:600; }
+thead th { background:#6b7280; color:#fff; padding:7px 8px; text-align:left; font-weight:600; }
 thead th.right { text-align:right; }
 thead th.center { text-align:center; }
 tbody tr:nth-child(even) { background:#f8faff; }
@@ -112,7 +108,7 @@ tbody td.center { text-align:center; }
 .totals-box { width:260px; }
 .tot-row { display:flex; justify-content:space-between; padding:3px 0; font-size:9.5pt; color:#6b7280; }
 .tot-row.divider { border-top:1px solid #e5e7eb; margin-top:4px; padding-top:6px; font-weight:600; color:#374151; }
-.tot-row.total-geral { border-top:2px solid #1d4ed8; margin-top:6px; padding-top:8px; font-size:13pt; font-weight:700; color:#1d4ed8; }
+.tot-row.total-geral { border-top:2px solid #777a82; margin-top:6px; padding-top:8px; font-size:13pt; font-weight:700; color:#000000; }
 .tot-row .neg { color:#dc2626; }
 
 /* ── Condições ── */
@@ -167,21 +163,23 @@ tbody td.center { text-align:center; }
     <!-- Cabeçalho -->
     <div class="header">
         <div>
-            <div> <img width="310" height='81'  src="<?= APP_URL; ?>/assets/img/logo-orc.svg" /></div>
+            <div> <img width="155" height='40'  src="<?= APP_URL; ?>/assets/img/logo-orc.svg" /></div>
            <!-- <div class="empresa-nome"><?= h($empresa['nome'] ?? 'Ksabox') ?></div> -->
             <div class="empresa-info">
                 <?php if (!empty($empresa['cnpj'])): ?>CNPJ: <?= h($empresa['cnpj']) ?><br><?php endif; ?>
+                <?php if (!empty($empresa['endereco'])): ?><?= h($empresa['endereco']) ?>, <?= h($empresa['numero']) ?> - <?= h($empresa['bairro']) ?><br><?php endif; ?> 
+                <?php if (!empty($empresa['cep'])): ?><?= h($empresa['cep'])." - " ?><?php endif; ?><?php if (!empty($empresa['cidade'])): ?><?= h($empresa['cidade']) ?>/<?= h($empresa['uf']) ?><br><?php endif; ?>
                 <?php if (!empty($empresa['telefone'])): ?>Tel.: <?= h($empresa['telefone']) ?><?php endif; ?>
                 <?php if (!empty($empresa['email'])): ?> &nbsp;|&nbsp; <?= h($empresa['email']) ?><?php endif; ?>
-                <?php if (!empty($empresa['cidade'])): ?><br><?= h($empresa['cidade']) ?>/<?= h($empresa['uf']) ?><?php endif; ?>
+                
             </div>
         </div>
         <div class="orc-titulo">
             <h1>ORÇAMENTO</h1>
             <div class="orc-numero"><?= h($orc['numero']) ?></div>
-            <div>
+           <!-- <div>
                 <span class="status-badge" style="background:<?= $statusCor ?>;"><?= h($orc['status']) ?></span>
-            </div>
+            </div> -->
         </div>
     </div>
 
@@ -213,28 +211,28 @@ tbody td.center { text-align:center; }
     <table>
         <thead>
             <tr>
-                <th style="width:40%">Produto</th>
-                <th class="center" style="width:8%">Unid.</th>
-                <th class="right" style="width:10%">Qtd</th>
-                <th class="right" style="width:14%">Vlr Unit.</th>
-                <th class="right" style="width:14%">Vlr Total</th>
-              <!--  <th class="right" style="width:14%">% Margem</th> -->
+                <th style="width:34%">Produto</th>
+                <th class="center" style="width:7%">Unid.</th>
+                <th class="right" style="width:9%">Qtd</th>
+                <th class="right" style="width:13%">Vlr Unit.</th>
+                <th class="center" style="width:8%">% Desc.</th>
+                <th class="right" style="width:13%">Vlr c/ Desc.</th>
+                <th class="right" style="width:13%">Vlr Total</th>
             </tr>
         </thead>
         <tbody>
         <?php foreach ($itens as $item):
-            $pm = (float)$item['perc_margem_liquida'];
-            $mCor = $pm >= 15 ? '#16a34a' : ($pm >= 5 ? '#ca8a04' : '#dc2626');
+            $percDesc = (float)($item['perc_desconto'] ?? 0);
+            $vDisc    = (float)($item['valor_com_desconto'] ?? $item['valor_unitario']);
         ?>
             <tr>
                 <td class="product-name"><?= h($item['produto_nome']) ?></td>
                 <td class="center"><?= h($item['unidade_sigla']) ?></td>
                 <td class="right"><?= number_format((float)$item['quantidade'], 2, ',', '.') ?></td>
                 <td class="right"><?= moneyBr($item['valor_unitario']) ?></td>
+                <td class="center"><?= $percDesc > 0 ? number_format($percDesc, 2, ',', '.').'%' : '—' ?></td>
+                <td class="right"><?= moneyBr($vDisc) ?></td>
                 <td class="right"><strong><?= moneyBr($item['valor_total']) ?></strong></td>
-               <!-- <td class="right" style="color:<?= $mCor ?>; font-weight:600;">
-                    <?= number_format($pm, 1, ',', '.') ?>%
-                </td> -->
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -248,12 +246,6 @@ tbody td.center { text-align:center; }
             <div class="tot-row divider"><span>Subtotal</span><span><?= moneyBr($orc['subtotal']) ?></span></div>
             <?php if ((float)$orc['total_ipi'] > 0): ?>
             <div class="tot-row"><span>IPI</span><span><?= moneyBr($orc['total_ipi']) ?></span></div>
-            <?php endif; ?>
-            <?php if ($desconto > 0): ?>
-            <div class="tot-row">
-                <span>Desconto<?= $orc['tipo_desconto'] === 'percentual' ? ' (' . number_format((float)$orc['desconto_percentual'], 2, ',', '.') . '%)' : '' ?></span>
-                <span class="neg">- <?= moneyBr($desconto) ?></span>
-            </div>
             <?php endif; ?>
             <div class="tot-row total-geral"><span>TOTAL GERAL</span><span><?= moneyBr($orc['total_geral']) ?></span></div>
         </div>

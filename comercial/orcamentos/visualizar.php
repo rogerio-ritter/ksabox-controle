@@ -129,17 +129,6 @@ $badgeCls = match($orc['status']) {
                 <dt>IPI</dt><dd><?= moneyBr($orc['total_ipi']) ?></dd>
             </div>
             <?php endif; ?>
-            <?php
-            $desconto = $orc['tipo_desconto'] === 'valor'
-                ? (float)$orc['desconto_valor']
-                : ((float)$orc['subtotal'] * (float)$orc['desconto_percentual'] / 100);
-            if ($desconto > 0):
-            ?>
-            <div class="flex justify-between text-red-500 dark:text-red-400">
-                <dt>Desconto<?= $orc['tipo_desconto'] === 'percentual' ? ' (' . number_format((float)$orc['desconto_percentual'], 2, ',', '.') . '%)' : '' ?></dt>
-                <dd>- <?= moneyBr($desconto) ?></dd>
-            </div>
-            <?php endif; ?>
             <div class="flex justify-between font-bold text-lg text-blue-600 dark:text-blue-400 pt-2 border-t-2 border-gray-300 dark:border-gray-600">
                 <dt>Total Geral</dt><dd><?= moneyBr($orc['total_geral']) ?></dd>
             </div>
@@ -160,6 +149,8 @@ $badgeCls = match($orc['status']) {
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-center w-16">Unid.</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-right w-24">Qtd</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-right w-32">Vlr Unit.</th>
+                    <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-center w-20">% Desc.</th>
+                    <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-right w-32">Vlr c/ Desc.</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-right w-32">Vlr Total</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-center w-20">% Mat.</th>
                     <th class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-center w-24">% Margem</th>
@@ -175,6 +166,10 @@ $badgeCls = match($orc['status']) {
                     <td class="px-4 py-3 text-center text-xs font-mono text-gray-500 dark:text-gray-400"><?= h($item['unidade_sigla']) ?></td>
                     <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400"><?= number_format((float)$item['quantidade'], 2, ',', '.') ?></td>
                     <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400"><?= moneyBr($item['valor_unitario']) ?></td>
+                    <td class="px-4 py-3 text-center text-xs text-gray-500 dark:text-gray-400">
+                        <?= (float)$item['perc_desconto'] > 0 ? number_format((float)$item['perc_desconto'], 2, ',', '.').'%' : '—' ?>
+                    </td>
+                    <td class="px-4 py-3 text-right text-gray-700 dark:text-gray-300"><?= moneyBr($item['valor_com_desconto'] ?? $item['valor_unitario']) ?></td>
                     <td class="px-4 py-3 text-right font-semibold text-gray-800 dark:text-gray-200"><?= moneyBr($item['valor_total']) ?></td>
                     <td class="px-4 py-3 text-center text-xs text-gray-500 dark:text-gray-400"><?= number_format((float)$item['perc_material'], 1, ',', '.') ?>%</td>
                     <td class="px-4 py-3 text-center text-xs font-semibold <?= $mCls ?>"><?= number_format($pm, 1, ',', '.') ?>%</td>

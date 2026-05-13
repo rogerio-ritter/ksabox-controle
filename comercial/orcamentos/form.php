@@ -13,7 +13,7 @@ if ($id) {
     $orcamento = $stmt->fetch();
     if ($orcamento) {
         $stmt2 = db()->prepare(
-            "SELECT produto_id, quantidade, valor_unitario, perc_material, perc_margem_liquida
+            "SELECT produto_id, quantidade, valor_unitario, perc_desconto, perc_material, perc_margem_liquida
              FROM orcamento_itens WHERE orcamento_id = ? ORDER BY id"
         );
         $stmt2->execute([$id]);
@@ -102,15 +102,17 @@ require_once __DIR__ . '/../../layout/header.php';
                     <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-20 text-center">Unid.</th>
                     <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-24">Qtd</th>
                     <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-32">Vlr Unitário</th>
+                    <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-24 text-center">% Desc.</th>
+                    <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-32 text-right">Vlr c/ Desc.</th>
                     <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-32 text-right">Vlr Total</th>
-                    <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-20 text-center">% Mat.</th>
+                    <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-24 text-center">% Mat.</th>
                     <th class="px-3 py-3 font-medium text-gray-500 dark:text-gray-400 w-24 text-center">% Margem</th>
                     <th class="px-3 py-3 w-10"></th>
                 </tr>
             </thead>
             <tbody id="items-tbody">
                 <tr id="row-empty">
-                    <td colspan="8" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                    <td colspan="10" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                         Nenhum item adicionado. Clique em "Adicionar Item".
                     </td>
                 </tr>
@@ -134,23 +136,6 @@ require_once __DIR__ . '/../../layout/header.php';
                 <div class="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>IPI</span><span id="tot-ipi">R$ 0,00</span>
                 </div>
-
-                <!-- Desconto -->
-                <div class="flex items-center gap-2 pt-1 border-t border-gray-200 dark:border-gray-600">
-                    <span class="text-gray-600 dark:text-gray-400 mr-1">Desconto</span>
-                    <label class="flex items-center gap-1 text-xs cursor-pointer">
-                        <input type="radio" name="tipo_desc" id="desc-perc" value="percentual" checked onchange="onDescontoChange()"> %
-                    </label>
-                    <label class="flex items-center gap-1 text-xs cursor-pointer">
-                        <input type="radio" name="tipo_desc" id="desc-val" value="valor" onchange="onDescontoChange()"> R$
-                    </label>
-                    <input id="f-desconto" type="number" min="0" step="0.01" value="0"
-                        class="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg
-                               bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        oninput="calcTotals()">
-                    <span id="tot-desc-val" class="ml-auto text-gray-500 dark:text-gray-400">R$ 0,00</span>
-                </div>
-
                 <div class="flex justify-between font-bold text-base text-gray-900 dark:text-white pt-2 border-t-2 border-gray-300 dark:border-gray-500">
                     <span>Total Geral</span>
                     <span id="tot-geral" class="text-blue-600 dark:text-blue-400">R$ 0,00</span>
@@ -209,9 +194,9 @@ require_once __DIR__ . '/../../layout/header.php';
 
 <script>
 /* ─── Dados carregados via API ─── */
-let produtosMap = {};   // id → objeto produto
-let tabelasMap  = {};   // id → {nome, multiplicador}
-let items       = [];   // array de objetos item do orçamento
+let produtosMap = {};
+let tabelasMap  = {};
+let items       = [];
 let idxCounter  = 0;
 
 /* ─── Dados PHP injetados (edição) ─── */
@@ -221,7 +206,6 @@ const EDIT_ITENS = <?= $itensJson ?>;
 
 function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtBRL(v){ v=parseFloat(v)||0; return 'R$ '+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
-function fv(id){ return parseFloat(document.getElementById(id)?.value)||0; }
 function set(id, v){ const el=document.getElementById(id); if(el) el.textContent=fmtBRL(v); }
 
 /* ─── Carregar selects via API ─── */
@@ -229,11 +213,9 @@ async function carregaSelects() {
     const res  = await fetch('api.php?selects=1');
     const json = await res.json();
 
-    // Produtos
     produtosMap = {};
     (json.produtos || []).forEach(p => produtosMap[p.id] = p);
 
-    // Tabelas
     tabelasMap = {};
     const selTabela = document.getElementById('f-tabela_preco_id');
     selTabela.innerHTML = '<option value="">Selecione...</option>' +
@@ -242,46 +224,36 @@ async function carregaSelects() {
             return `<option value="${t.id}">${esc(t.nome)} (×${parseFloat(t.multiplicador).toFixed(2)})</option>`;
         }).join('');
 
-    // Clientes
     const selCli = document.getElementById('f-cliente_id');
     selCli.innerHTML = '<option value="">Selecione...</option>' +
         (json.clientes || []).map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
 
-    // Se editando, popular os campos e itens
     if (EDIT_ORC) {
         selCli.value = EDIT_ORC.cliente_id;
         selTabela.value = EDIT_ORC.tabela_preco_id;
-        document.getElementById('f-data_criacao').value = EDIT_ORC.data_criacao || '';
-        document.getElementById('f-validade').value     = EDIT_ORC.validade     || '';
-        document.getElementById('f-status').value       = EDIT_ORC.status       || 'Rascunho';
-        document.getElementById('f-prazo_entrega').value       = EDIT_ORC.prazo_entrega       || '';
-        document.getElementById('f-condicao_pagamento').value  = EDIT_ORC.condicao_pagamento  || '';
-        document.getElementById('f-condicao_entrega').value    = EDIT_ORC.condicao_entrega    || '';
-        document.getElementById('f-condicoes_gerais').value    = EDIT_ORC.condicoes_gerais    || '';
-        document.getElementById('f-observacoes').value         = EDIT_ORC.observacoes         || '';
+        document.getElementById('f-data_criacao').value        = EDIT_ORC.data_criacao       || '';
+        document.getElementById('f-validade').value            = EDIT_ORC.validade           || '';
+        document.getElementById('f-status').value              = EDIT_ORC.status             || 'Rascunho';
+        document.getElementById('f-prazo_entrega').value       = EDIT_ORC.prazo_entrega      || '';
+        document.getElementById('f-condicao_pagamento').value  = EDIT_ORC.condicao_pagamento || '';
+        document.getElementById('f-condicao_entrega').value    = EDIT_ORC.condicao_entrega   || '';
+        document.getElementById('f-condicoes_gerais').value    = EDIT_ORC.condicoes_gerais   || '';
+        document.getElementById('f-observacoes').value         = EDIT_ORC.observacoes        || '';
 
-        if (EDIT_ORC.tipo_desconto === 'valor') {
-            document.getElementById('desc-val').checked = true;
-        }
-        document.getElementById('f-desconto').value = EDIT_ORC.tipo_desconto === 'valor'
-            ? EDIT_ORC.desconto_valor || 0
-            : EDIT_ORC.desconto_percentual || 0;
-
-        // Itens
         EDIT_ITENS.forEach(item => {
             const idx = ++idxCounter;
             items.push({
                 idx,
-                produto_id:    parseInt(item.produto_id),
-                quantidade:    parseFloat(item.quantidade),
+                produto_id:     parseInt(item.produto_id),
+                quantidade:     parseFloat(item.quantidade),
                 valor_unitario: parseFloat(item.valor_unitario),
-                perc_material: parseFloat(item.perc_material),
+                perc_desconto:  parseFloat(item.perc_desconto  || 0),
+                perc_material:  parseFloat(item.perc_material),
             });
         });
         renderItems();
         calcTotals();
     } else {
-        // Defaults para novo orçamento
         const hoje = new Date();
         document.getElementById('f-data_criacao').value = hoje.toISOString().split('T')[0];
         const validade = new Date(hoje);
@@ -308,7 +280,8 @@ function onTabelaChange() {
 function onItemProdutoChange(idx) {
     const item = items.find(i => i.idx === idx);
     const pid  = parseInt(document.getElementById(`ip-${idx}`).value) || 0;
-    item.produto_id = pid;
+    item.produto_id   = pid;
+    item.perc_desconto = 0;
     if (pid && produtosMap[pid]) {
         const p    = produtosMap[pid];
         const tid  = parseInt(document.getElementById('f-tabela_preco_id').value) || 0;
@@ -317,80 +290,93 @@ function onItemProdutoChange(idx) {
         item.perc_material  = parseFloat(p.perc_material);
         document.getElementById(`iu-${idx}`).value = item.valor_unitario.toFixed(2);
         document.getElementById(`iq-${idx}`).value = item.quantidade || 1;
+        document.getElementById(`id-${idx}`).value = '0.00';
+        document.getElementById(`im-${idx}`).value = item.perc_material.toFixed(1);
         item.quantidade = parseFloat(document.getElementById(`iq-${idx}`).value);
     }
     renderItemCells(idx);
     calcTotals();
 }
 
-/* ─── Qtd ou preço mudaram numa linha ─── */
+/* ─── Qtd, preço, desconto ou % mat mudaram numa linha ─── */
 function onItemChange(idx) {
     const item = items.find(i => i.idx === idx);
     item.quantidade     = parseFloat(document.getElementById(`iq-${idx}`).value) || 0;
     item.valor_unitario = parseFloat(document.getElementById(`iu-${idx}`).value) || 0;
+    item.perc_desconto  = Math.min(100, Math.max(0,   parseFloat(document.getElementById(`id-${idx}`).value) || 0));
+    item.perc_material  = Math.min(100, Math.max(0,   parseFloat(document.getElementById(`im-${idx}`).value) || 0));
     renderItemCells(idx);
     calcTotals();
 }
 
-/* ─── Calcular margem para um item ─── */
-function calcMargem(vlr, pMat, p) {
-    if (!p || vlr <= 0) return 0;
-    const vMat = vlr * pMat / 100;
-    const vSrv = vlr - vMat;
-    const desp = vlr * (parseFloat(p.perc_desp_admin) + parseFloat(p.perc_desp_fixas)
-                      + parseFloat(p.perc_comissao_venda) + parseFloat(p.perc_pos_venda)
-                      + parseFloat(p.perc_icms_venda)) / 100
+/* ─── Calcular margem sobre o valor com desconto ─── */
+function calcMargem(vlr, percDesc, pMat, p) {
+    const vEfetivo = vlr * (1 - (percDesc || 0) / 100);
+    if (!p || vEfetivo <= 0) return 0;
+    const vMat = vEfetivo * pMat / 100;
+    const vSrv = vEfetivo - vMat;
+    const desp = vEfetivo * (parseFloat(p.perc_desp_admin) + parseFloat(p.perc_desp_fixas)
+                           + parseFloat(p.perc_comissao_venda) + parseFloat(p.perc_pos_venda)
+                           + parseFloat(p.perc_icms_venda)) / 100
                + vMat * parseFloat(p.perc_imp_interno_material) / 100
                + vSrv * parseFloat(p.perc_imp_interno_servico)  / 100
                + parseFloat(p.valor_montagem || 0)
                - parseFloat(p.icms_custo_unitario || 0);
-    const margem = vlr - parseFloat(p.custo_unitario) - desp;
-    return vlr > 0 ? (margem / vlr) * 100 : 0;
+    const margem = vEfetivo - parseFloat(p.custo_unitario) - desp;
+    return vEfetivo > 0 ? (margem / vEfetivo) * 100 : 0;
 }
 
 /* ─── Renderiza toda a tbody ─── */
 function renderItems() {
     const tbody = document.getElementById('items-tbody');
     if (!items.length) {
-        tbody.innerHTML = `<tr id="row-empty"><td colspan="8" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+        tbody.innerHTML = `<tr id="row-empty"><td colspan="10" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
             Nenhum item adicionado. Clique em "Adicionar Item".</td></tr>`;
         return;
     }
     const opts = Object.values(produtosMap).map(p =>
         `<option value="${p.id}">${esc(p.nome)}</option>`
     ).join('');
-
     tbody.innerHTML = items.map(item => buildRow(item, opts)).join('');
 }
 
-/* ─── Atualiza apenas células de cálculo de uma linha ─── */
+/* ─── Atualiza células calculadas de uma linha ─── */
 function renderItemCells(idx) {
-    const item = items.find(i => i.idx === idx);
-    const p    = produtosMap[item.produto_id];
-    const total = item.quantidade * item.valor_unitario;
-    const margem = calcMargem(item.valor_unitario, item.perc_material, p);
-    const mCls = margem >= 15 ? 'text-green-600 dark:text-green-400'
-               : margem >= 5  ? 'text-yellow-600 dark:text-yellow-400'
-               : 'text-red-500 dark:text-red-400';
+    const item   = items.find(i => i.idx === idx);
+    const p      = produtosMap[item.produto_id];
+    const percD  = item.perc_desconto || 0;
+    const vDisc  = item.valor_unitario * (1 - percD / 100);
+    const total  = item.quantidade * vDisc;
+    const margem = calcMargem(item.valor_unitario, percD, item.perc_material, p);
+    const mCls   = margem >= 15 ? 'text-green-600 dark:text-green-400'
+                 : margem >= 5  ? 'text-yellow-600 dark:text-yellow-400'
+                 : 'text-red-500 dark:text-red-400';
 
-    const elTotal   = document.getElementById(`it-${idx}`);
-    const elMat     = document.getElementById(`im-${idx}`);
-    const elMargem  = document.getElementById(`imrg-${idx}`);
-    const elUnidade = document.getElementById(`iunit-${idx}`);
+    const elVDisc  = document.getElementById(`ivc-${idx}`);
+    const elTotal  = document.getElementById(`it-${idx}`);
+    const elMargem = document.getElementById(`imrg-${idx}`);
+    const elUnit   = document.getElementById(`iunit-${idx}`);
 
-    if (elTotal)   elTotal.textContent   = fmtBRL(total);
-    if (elMat)     elMat.textContent     = item.produto_id && p ? parseFloat(item.perc_material).toFixed(1)+'%' : '—';
-    if (elMargem)  { elMargem.textContent = item.produto_id && p ? margem.toFixed(1)+'%' : '—'; elMargem.className = `text-center text-xs font-semibold ${p ? mCls : 'text-gray-400'}`; }
-    if (elUnidade) elUnidade.textContent = p ? p.unidade_sigla : '—';
+    if (elVDisc)  elVDisc.textContent  = fmtBRL(vDisc);
+    if (elTotal)  elTotal.textContent  = fmtBRL(total);
+    if (elMargem) {
+        elMargem.textContent = item.produto_id && p ? margem.toFixed(1)+'%' : '—';
+        elMargem.className   = `text-center text-xs font-semibold ${p ? mCls : 'text-gray-400'}`;
+    }
+    if (elUnit) elUnit.textContent = p ? p.unidade_sigla : '—';
 }
 
 function buildRow(item, opts) {
     const p      = produtosMap[item.produto_id];
-    const total  = item.quantidade * item.valor_unitario;
-    const margem = calcMargem(item.valor_unitario, item.perc_material, p);
+    const percD  = item.perc_desconto || 0;
+    const vDisc  = item.valor_unitario * (1 - percD / 100);
+    const total  = item.quantidade * vDisc;
+    const margem = calcMargem(item.valor_unitario, percD, item.perc_material, p);
     const mCls   = margem >= 15 ? 'text-green-600 dark:text-green-400'
                  : margem >= 5  ? 'text-yellow-600 dark:text-yellow-400'
                  : 'text-red-500 dark:text-red-400';
+    const inpCls = `w-full py-1.5 px-2 text-sm text-right border border-gray-300 dark:border-gray-600 rounded-lg
+                    bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500`;
     return `
     <tr class="border-b border-gray-100 dark:border-gray-700" id="row-${item.idx}">
         <td class="px-3 py-2">
@@ -406,23 +392,30 @@ function buildRow(item, opts) {
         </td>
         <td class="px-3 py-2">
             <input id="iq-${item.idx}" type="number" min="0.01" step="0.01"
-                value="${item.quantidade}"
-                oninput="onItemChange(${item.idx})"
-                class="w-full py-1.5 px-2 text-sm text-right border border-gray-300 dark:border-gray-600 rounded-lg
-                       bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                value="${item.quantidade}" oninput="onItemChange(${item.idx})" class="${inpCls}">
         </td>
         <td class="px-3 py-2">
-            <input id="iu-${item.idx}" type="number" min="0.01" step="0.01"
-                value="${item.valor_unitario.toFixed(2)}"
-                oninput="onItemChange(${item.idx})"
+            <input id="iu-${item.idx}" type="number" min="0" step="0.01"
+                value="${item.valor_unitario.toFixed(2)}" oninput="onItemChange(${item.idx})" class="${inpCls}">
+        </td>
+        <td class="px-3 py-2">
+            <input id="id-${item.idx}" type="number" min="0" max="100" step="0.01"
+                value="${percD.toFixed(2)}" oninput="onItemChange(${item.idx})"
                 class="w-full py-1.5 px-2 text-sm text-right border border-gray-300 dark:border-gray-600 rounded-lg
                        bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
         </td>
-        <td id="it-${item.idx}" class="px-3 py-2 text-right font-medium text-gray-800 dark:text-gray-200">
+        <td id="ivc-${item.idx}" class="px-3 py-2 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+            ${fmtBRL(vDisc)}
+        </td>
+        <td id="it-${item.idx}" class="px-3 py-2 text-right font-semibold text-gray-800 dark:text-gray-200">
             ${fmtBRL(total)}
         </td>
-        <td id="im-${item.idx}" class="px-3 py-2 text-center text-xs text-gray-500 dark:text-gray-400">
-            ${p ? parseFloat(item.perc_material).toFixed(1)+'%' : '—'}
+        <td class="px-3 py-2">
+            <input id="im-${item.idx}" type="number" min="0" max="100" step="0.1"
+                value="${parseFloat(item.perc_material || 0).toFixed(1)}"
+                oninput="onItemChange(${item.idx})"
+                class="w-full py-1.5 px-2 text-sm text-right border border-gray-300 dark:border-gray-600 rounded-lg
+                       bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
         </td>
         <td id="imrg-${item.idx}" class="px-3 py-2 text-center text-xs font-semibold ${p ? mCls : 'text-gray-400'}">
             ${p ? margem.toFixed(1)+'%' : '—'}
@@ -441,9 +434,8 @@ function addItem() {
         showToast('Nenhum produto com preço formado disponível.', 'warning'); return;
     }
     const idx = ++idxCounter;
-    items.push({ idx, produto_id: 0, quantidade: 1, valor_unitario: 0, perc_material: 70 });
+    items.push({ idx, produto_id: 0, quantidade: 1, valor_unitario: 0, perc_desconto: 0, perc_material: 70 });
     renderItems();
-    // Foca no select do novo item
     setTimeout(() => document.getElementById(`ip-${idx}`)?.focus(), 50);
 }
 
@@ -453,30 +445,26 @@ function removeItem(idx) {
     calcTotals();
 }
 
-/* ─── Calcular totais globais ─── */
-function onDescontoChange() { calcTotals(); }
-
+/* ─── Calcular totais globais (desconto já embutido nos valores por item) ─── */
 function calcTotals() {
     let sMat = 0, sSrv = 0, sIPI = 0;
     items.forEach(item => {
-        const p    = produtosMap[item.produto_id];
-        const tot  = item.quantidade * item.valor_unitario;
-        const mat  = tot * item.perc_material / 100;
+        const p     = produtosMap[item.produto_id];
+        const percD = item.perc_desconto || 0;
+        const vDisc = item.valor_unitario * (1 - percD / 100);
+        const tot   = item.quantidade * vDisc;
+        const mat   = tot * item.perc_material / 100;
         sMat += mat;
         sSrv += tot - mat;
-        if (p) sIPI += tot * parseFloat(p.perc_ipi || 0) / 100;
+        if (p) sIPI += mat * parseFloat(p.perc_ipi || 0) / 100;
     });
-    const sub    = sMat + sSrv;
-    const tipoD  = document.querySelector('input[name="tipo_desc"]:checked')?.value || 'percentual';
-    const dInput = parseFloat(document.getElementById('f-desconto').value) || 0;
-    const desc   = tipoD === 'valor' ? dInput : sub * dInput / 100;
-    const total  = sub + sIPI - desc;
+    const sub   = sMat + sSrv;
+    const total = sub + sIPI;
 
     set('tot-mat',  sMat);
     set('tot-srv',  sSrv);
     set('tot-sub',  sub);
     set('tot-ipi',  sIPI);
-    set('tot-desc-val', desc);
     set('tot-geral', total);
 }
 
@@ -491,9 +479,6 @@ async function salvar() {
     const itensFiltrados = items.filter(i => i.produto_id && i.quantidade > 0 && i.valor_unitario > 0);
     if (!itensFiltrados.length) { showToast('Preencha todos os itens corretamente.', 'error'); return; }
 
-    const tipoD  = document.querySelector('input[name="tipo_desc"]:checked')?.value || 'percentual';
-    const dInput = parseFloat(document.getElementById('f-desconto').value) || 0;
-
     const payload = {
         id:                 EDIT_ID,
         cliente_id:         clienteId,
@@ -506,13 +491,11 @@ async function salvar() {
         condicao_entrega:   document.getElementById('f-condicao_entrega').value,
         condicoes_gerais:   document.getElementById('f-condicoes_gerais').value,
         observacoes:        document.getElementById('f-observacoes').value,
-        tipo_desconto:      tipoD,
-        desconto_valor:     tipoD === 'valor'       ? dInput : 0,
-        desconto_percentual: tipoD === 'percentual' ? dInput : 0,
         items: itensFiltrados.map(i => ({
             produto_id:     i.produto_id,
             quantidade:     i.quantidade,
             valor_unitario: i.valor_unitario,
+            perc_desconto:  i.perc_desconto  || 0,
             perc_material:  i.perc_material,
         }))
     };

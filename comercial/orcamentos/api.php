@@ -61,6 +61,7 @@ if ($method === 'GET') {
             WHERE oi.orcamento_id = ?
             ORDER BY oi.id
         ");
+
         $stmt2->execute([$id]);
         $itens = $stmt2->fetchAll();
 
@@ -101,9 +102,6 @@ if ($method === 'POST') {
     $validade        = trim($input['validade']          ?? '') ?: null;
     $status          = trim($input['status']            ?? 'Rascunho');
     $observacoes     = trim($input['observacoes']       ?? '') ?: null;
-    $tipo_desc       = trim($input['tipo_desconto']     ?? 'percentual');
-    $desc_val        = (float)($input['desconto_valor']       ?? 0);
-    $desc_perc       = (float)($input['desconto_percentual']  ?? 0);
     $prazo           = trim($input['prazo_entrega']     ?? '') ?: null;
     $cond_pag        = trim($input['condicao_pagamento'] ?? '') ?: null;
     $cond_ent        = trim($input['condicao_entrega']  ?? '') ?: null;
@@ -137,9 +135,9 @@ if ($method === 'POST') {
     try {
         /* ---- Cabeçalho ---- */
         $campos = "cliente_id,tabela_preco_id,data_criacao,validade,status,observacoes,
-                   tipo_desconto,prazo_entrega,condicao_pagamento,condicao_entrega,condicoes_gerais";
+                   prazo_entrega,condicao_pagamento,condicao_entrega,condicoes_gerais";
         $vals   = [$cliente_id, $tabela_id, $data_criacao, $validade, $status, $observacoes,
-                   $tipo_desc, $prazo, $cond_pag, $cond_ent, $conds_gerais];
+                   $prazo, $cond_pag, $cond_ent, $conds_gerais];
 
         if ($id) {
             $sets = implode(',', array_map(fn($c) => trim($c).'=?', explode(',', $campos)));
@@ -157,17 +155,19 @@ if ($method === 'POST') {
         /* ---- Itens ---- */
         $insItem = $pdo->prepare(
             "INSERT INTO orcamento_itens
-             (orcamento_id,produto_id,quantidade,valor_unitario,perc_material,perc_margem_liquida)
-             VALUES (?,?,?,?,?,?)"
+             (orcamento_id,produto_id,quantidade,valor_unitario,perc_desconto,perc_material,perc_margem_liquida)
+             VALUES (?,?,?,?,?,?,?)"
         );
         foreach ($items as $item) {
-            $pid  = (int)($item['produto_id']    ?? 0);
-            $qtd  = (float)($item['quantidade']  ?? 0);
-            $vlr  = (float)($item['valor_unitario'] ?? 0);
-            $pMat = (float)($item['perc_material']  ?? 0);
+            $pid      = (int)($item['produto_id']     ?? 0);
+            $qtd      = (float)($item['quantidade']   ?? 0);
+            $vlr      = (float)($item['valor_unitario'] ?? 0);
+            $percDesc = min(100.0, max(0.0, (float)($item['perc_desconto'] ?? 0)));
+            $pMat     = (float)($item['perc_material']  ?? 0);
             if (!$pid || $qtd <= 0 || $vlr <= 0) continue;
-            $margem = calcMargemItemPHP($vlr, $pMat, $formacoes[$pid] ?? null);
-            $insItem->execute([$orcId, $pid, $qtd, $vlr, $pMat, $margem]);
+            $vlrEfetivo = $vlr * (1 - $percDesc / 100);
+            $margem = calcMargemItemPHP($vlrEfetivo, $pMat, $formacoes[$pid] ?? null);
+            $insItem->execute([$orcId, $pid, $qtd, $vlr, $percDesc, $pMat, $margem]);
         }
 
         /* ---- Totais (usa GENERATED COLUMNS do MySQL) ---- */
@@ -181,7 +181,7 @@ if ($method === 'POST') {
         $tots = $totStmt->fetch();
 
         $ipiStmt = $pdo->prepare("
-            SELECT COALESCE(SUM(oi.valor_total * c.perc_ipi / 100), 0) AS total_ipi
+            SELECT COALESCE(SUM(oi.valor_material * c.perc_ipi / 100), 0) AS total_ipi
             FROM orcamento_itens oi
             JOIN produtos p  ON p.id  = oi.produto_id
             JOIN categorias c ON c.id = p.categoria_id
@@ -191,13 +191,12 @@ if ($method === 'POST') {
         $totalIPI = (float)$ipiStmt->fetchColumn();
 
         $subtotal   = (float)$tots['subtotal'];
-        $desconto   = $tipo_desc === 'valor' ? $desc_val : ($subtotal * $desc_perc / 100);
-        $totalGeral = $subtotal + $totalIPI - $desconto;
+        $totalGeral = $subtotal + $totalIPI;
 
         $pdo->prepare("UPDATE orcamentos SET subtotal_material=?,subtotal_servico=?,subtotal=?,
-                       total_ipi=?,desconto_valor=?,desconto_percentual=?,total_geral=? WHERE id=?")
+                       total_ipi=?,desconto_valor=0,desconto_percentual=0,tipo_desconto='percentual',total_geral=? WHERE id=?")
             ->execute([$tots['subtotal_material'], $tots['subtotal_servico'], $subtotal,
-                       $totalIPI, $desc_val, $desc_perc, $totalGeral, $orcId]);
+                       $totalIPI, $totalGeral, $orcId]);
 
         $pdo->commit();
         jsonResponse(['success' => true, 'id' => $orcId,
@@ -223,6 +222,7 @@ if ($method === 'DELETE') {
 jsonResponse(['success' => false, 'message' => 'Método não permitido.'], 405);
 
 /* ──────────── Helpers ─────────────────────────────────────── */
+/* $vlr já é o valor efetivo com desconto aplicado */
 function calcMargemItemPHP(float $vlr, float $pMat, ?array $f): float {
     if (!$f || $vlr <= 0) return 0.0;
     $vMat  = $vlr * $pMat / 100;
